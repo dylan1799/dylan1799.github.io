@@ -1,6 +1,6 @@
 ---
 title: 'Project 1: Exploratory Data Analysis'
-author: "DMP"
+author: "Dylan Pfannenstiel, dmp2636"
 date: '2020'
 output:
   html_document:
