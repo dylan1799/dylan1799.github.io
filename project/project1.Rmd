@@ -1,0 +1,282 @@
+---
+title: 'Project 1: Exploratory Data Analysis'
+author: "DMP"
+date: '2020'
+output:
+  html_document:
+    toc: yes
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+  pdf_document:
+    toc: no
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE, fig.align = "center", warning = F, message = F,
+tidy=TRUE, tidy.opts=list(width.cutoff=60), R.options=list(max.print=100))
+```
+
+
+# Dylan Pfannenstiel, dmp2636
+## Intro and Importing
+##### I selected data on reported antibiotic resistance in clinical *Salmonella* isolates. This data were collected in the year 2015. There are 3 separate datasets each with data on a different antibiotic. All include year, genus, specimen ID, genus, species, and serotype (serotype is a way to distinguish within the same species based on surface antigens). The first dataset gives data for ciproflaxin (CIP) resistance. The second dataset gives data for azithromycin (AZM) resistance. The third dataset gives data for ceftriaxone (AXO) resistance.These are three commonly prescribed antibiotics used in the treatment of very severe infections. It may be that as resitance to one antibiotic increases, there is increased resistance to another (even of a different class). If observed, this could be a result of altered expression of non-specific resistance mechanisms such as efflux pumps. 
+
+
+```{r}
+library(tidyverse)
+library(cluster)
+library(RColorBrewer)
+
+```
+
+##### All datasets were downloaded from https://wwwn.cdc.gov/narmsnow/ as .csv files. 
+```{r}
+# read in the datasets
+s_cipR <- read.csv("s_cipR.csv")
+s_azmR <- read.csv("s_azmR.csv")
+s_axoR <- read.csv("s_axoR.csv")
+# examine dimensions and variables
+dim(s_cipR)
+head(s_cipR)
+dim(s_azmR)
+head(s_azmR)
+dim(s_axoR)
+head(s_axoR)
+```
+##### Note: These are data from clinical isolates. The "Rslt" variable provides the minimal inhibitory concentration for each antibiotic in μg/mL. This test result provides a measure of antibiotic resistance, with higher values indicating greater resistance. 
+
+
+## Joining and Merging
+##### I joined on the common variables listed below, as they were found in each dataset
+```{r}
+# join the first 2
+cip_azm <- left_join(s_cipR,s_azmR,by=c("Specimen.ID","Genus","Species","Serotype","Data.Year")) 
+
+# join that to the last one
+s_res <- left_join(cip_azm,s_axoR,c("Specimen.ID","Genus","Species","Serotype","Data.Year"))
+head(s_res)
+dim(s_res)
+```
+##### After performing a two left joins to combine all 3 datasets, we were left with 1806 individual observations. Each original dataset (s_cipR, s_azmR, s_axoR) all contained 1806 observations as well. No observations were dropped. We selected a left join since we wanted to retain all rows and columns in the left dataframe (s_cipR in the first join and the combined s_cipR+s_azmR in the second join). With each left join we wanted to simply add in the resistance values (e.g. AZM.Rslt) in cases in which there was a match to the left/existing data. 
+
+
+## Wrangling/Summary
+
+##### Select
+##### We need to first drop the unecessary "X" identifier variables from the joined dataset
+```{r}
+s_res <- s_res %>% select(-X.x,-X.y,-X)
+head(s_res)
+```
+
+##### mutate + case_when
+##### I want to add columns that classify the susceptibility of the *Salmonella* isolate based on the MIC values. (chart given here https://www.fda.gov/media/92766/download)
+```{r}
+# use case_when to create a conditional mutation that gives us susceptibility classification
+s_res %>% mutate(CIP.Susc=case_when(CIP.Rslt<=.06 ~ "S",
+                                          CIP.Rslt>=.12 & CIP.Rslt<=.5 ~ "I",
+                                          CIP.Rslt>=1 ~ "R")) %>%
+  mutate(AZM.Susc=case_when(AZM.Rslt<=16 ~ "S",
+                            AZM.Rslt>=32 ~ "R")) %>%
+  mutate(AXO.Susc=case_when(AXO.Rslt<=1 ~ "S",
+                            AXO.Rslt==2 ~ "I",
+                            AXO.Rslt>=4 ~ "R")) ->s_res
+head(s_res)
+```
+##### Note: S is susceptible, I is intermediate, and R is resistant. 
+
+##### Summary stats
+```{r}
+# calculate mean MIC values for each antibiotic
+s_res %>% summarize(meanMICcip=mean(CIP.Rslt), meanMICazm=mean(AZM.Rslt), meanMICaxo=mean(AXO.Rslt))
+
+# number of distinct MIC values reported for each antibiotic
+s_res %>% summarize(disMICcip=n_distinct(CIP.Rslt), distMICazm=n_distinct(AZM.Rslt), distMICaxo=n_distinct(AXO.Rslt))
+
+# standard deviation for MIC values for each antibiotic
+s_res %>% summarize(sdMICcip=sd(CIP.Rslt), sdMICazm=sd(AZM.Rslt), sdMICaxo=sd(AXO.Rslt))
+
+# now do the same, but when grouped by species and serotype
+s_res %>% group_by(Species,Serotype) %>% summarize(meanMICcip=mean(CIP.Rslt), meanMICazm=mean(AZM.Rslt), meanMICaxo=mean(AXO.Rslt))
+
+# minimum when grouped
+s_res %>% group_by(Species,Serotype) %>% summarize(minMICcip=min(CIP.Rslt), minMICazm=min(AZM.Rslt), minMICaxo=min(AXO.Rslt))
+
+```
+##### The tables above describe the mean MIC values for each antibiotic, the number of distinct MIC values for each antibiotic, and the standard deviation of MIC values for each. It also provides the mean MIC and minimum MIC for all 3 antibiotics when grouped by species and serotype.
+
+
+##### Now say we've read a lot of literature on *Salmonella* serotype Enteritidis. This is a pathogen of interest. We can pull out that row to examine its mean MICs via filter
+```{r}
+s_res %>% group_by(Species,Serotype) %>% summarize(meanMICcip=mean(CIP.Rslt), meanMICazm=mean(AZM.Rslt), meanMICaxo=mean(AXO.Rslt)) %>%
+  filter(Serotype=="Enteritidis") 
+```
+
+
+#####Now let's pivot the original summary table to get a different look
+
+## Tidying/Pivoting
+#####pivoting wide
+```{r}
+# reshape table to wide (very wide) format. Every Serotype/MIC has its own column
+s_res %>% group_by(Species,Serotype) %>% summarize(meanMICcip=mean(CIP.Rslt),meanMICazm=mean(AZM.Rslt), meanMICaxo=mean(AXO.Rslt)) %>%
+  pivot_wider(names_from="Serotype",values_from=c("meanMICcip","meanMICazm","meanMICaxo")) ->wides_res
+head(wides_res)
+
+```
+#####325 columns is ridiculous so let's return to our original table
+
+##### pivoting again + arrange() + group_by()
+```{r}
+# There are too many columns to be useful, so let's reshape this table again
+wides_res %>% pivot_longer(2:325) %>%
+  separate(name,into=c("Rslt","Serotype")) %>%
+  group_by(Serotype) %>% # now we need to recreate new columns with the MIC names
+  mutate(row = row_number()) %>% # without this unique identifier, the values are lost somehow
+  pivot_wider(names_from="Rslt",values_from="value") %>%
+  select(-row) %>% arrange(Serotype) %>%
+  # but now each antibiotic is separated between rows
+  # We need to collapse these rows into 1 row while keeping the same columns
+  group_by(Species,Serotype) %>% summarize(meanMICcip=sum(meanMICcip,na.rm=T),
+                                   meanMICazm=sum(meanMICazm,na.rm=T),
+                                   meanMICaxo=sum(meanMICaxo,na.rm=T))
+# now we've restored the original long dataframe
+```
+
+##### Correlation between the MIC variables, cor()
+```{r}
+abcor <- s_res %>% select(-Data.Year) %>% select_if(is.numeric) %>% cor(use="pair")
+abcor
+```
+##### There is a weak positive correlation between AZM resistance and CIP resistance. There is a very weak positive correlation between AXO resistance and CIP resistance (near zero). There is also a very weak positive correlation between AZM and AXO resistance (near zero). The lack of strong correlation in resistance is likley due to the fact that each of these antibiotics acts through a different mechanism. As a result, resistance that occurs is liklely to only provide defense against that certain class of antibiotics. More data would be needed to identify a possible general resistance mechanism as mentioned before. 
+
+#####Creating correlation heatmap
+#####tidying
+```{r}
+# tidy the data into a nice dataframe for future use
+tidyabcor <- abcor %>% as.data.frame %>% rownames_to_column("var1") %>%
+  pivot_longer(-1,names_to="var2",values_to="correlation")
+tidyabcor
+```
+
+###Visualizing 
+##### cor heatmap
+```{r}
+tidyabcor %>% ggplot(aes(var1,var2,fill=correlation)) +
+  geom_tile()+
+  scale_fill_gradient2(low="red",mid="white",high="blue") +
+  geom_text(aes(label=round(correlation,2)),color = "black", size = 4) + 
+  theme(axis.text.x = element_text(angle = 90, hjust=1)) + 
+  coord_fixed()
+```
+##### See earlier correlation interpretation
+
+```{r}
+# there are too many serotypes to make readable plots. So let's just look at the 10 serotypes that occur most frequently
+s_res %>% group_by(Serotype) %>% summarize(n=n()) %>% ungroup() %>% arrange(desc(n)) %>%
+  slice(1:10) 
+# now that we know them, create a new dataset with only these serotypes (for use in plotting)
+top10 <- s_res %>% 
+  filter(Serotype==c("Enteritidis","Typhimurium","Newport","I4,[5],12:i:-","Javiana","Muenchen",
+                     "Heidelberg","Saintpaul","Montevideo","Infantis")) 
+head(top10)
+
+```
+
+##### Look AXO resistance across the serotypes. Each isolate gets its own point
+```{r}
+ggplot(data=top10,aes(x=Serotype,y=AXO.Rslt,color=AXO.Susc)) + geom_point(alpha=.5, position=position_jitter(h=0.15,w=0.15)) +
+  theme(axis.text.x = element_text(angle=45, hjust=1)) +
+  ggtitle("Ceftriaxone (AXO) Resistance Across Serotypes") + ylab("AXO MIC (μg/mL)") + xlab("Serotype")+
+   labs(color = "AXO Susceptiblity") +
+  scale_y_continuous(breaks=seq(0,9,1)) + scale_color_brewer(palette="Dark2")
+
+```
+
+##### Since there were many isolates with the same or similar MICs, I used jittering to try to show more of the observations. The scatterplot maps resistance (measured by MIC) across the 10 most frequently occuring isolates. The majority of clinical isolates had relatively low ceftriaxone MICs and were classified as susceptible (good news!). However, there were resistant isolates of serotypes Infantis and Typhimurium. The majority of observed MICs fell around .25 μg/mL. For this antibiotic, the proportion of bacterial isolates that are resistant is very low, suggesting that resistance is not yet wide spread.
+
+```{r}
+ggplot(data=top10,aes(x=Serotype)) + geom_bar(aes(y=CIP.Rslt,fill=Serotype),stat="summary",fun=mean) +
+  geom_errorbar(aes(y=CIP.Rslt),stat="summary",fun.data=mean_se) +
+  theme(axis.text.x = element_text(angle=45, hjust=1)) +
+    ggtitle("Mean Ciproflaxin (CIP) Resistance Across Serotypes") + ylab("Mean CIP MIC (μg/mL)") + xlab("Serotype")
+  
+```
+
+##### This was a boxplot describing the mean ciproflaxin MIC across the 10 serotypes. Across all serotypes, typhimurium exhibited the highest mean resistance to ciproflaxin. However, the differences were not statistically significant due to high standard error. While some serotypes may show somehwat greater resistance than others, these differences are not large enough to suggest any substantial trends.
+
+##### While it would have been nice to visualize the data for all serotypes in the original dataset, there were simply too many to create a readable plot. 
+
+## Dimensionality Reduction - PAM
+##### Choosing number of clusters with silhoutte width
+##### Now we're returning to using the full dataset with all serotypes included
+```{r}
+pam_dat<-s_res%>%select(6:8) # only our numeric resistance variables of interest, creating PAM datset
+sil_width<-vector() # hold mean sil width
+for(i in 2:10){
+  pam_fit <- pam(pam_dat, k = i) # solution
+  sil_width[i] <- pam_fit$silinfo$avg.width
+}
+ggplot()+geom_line(aes(x=1:10,y=sil_width))+scale_x_continuous(name="k",breaks=1:10)
+```
+
+##### k=8 appears most suitable. At k=8 average silouhette width is greatest (approaching 1), providing evidence of a strong structure
+##### Did not scale data since all MIC values were already on same scale
+ 
+```{r}
+pam <- pam_dat %>% pam(k=8)
+pam
+```
+##### Ran pam function on new pam dataset
+ 
+####plotting
+```{r}
+pamclust<-pam_dat %>% mutate(cluster=as.factor(pam$clustering)) # save cluster assignments
+pamclust %>% ggplot(aes(CIP.Rslt,AZM.Rslt,color=cluster)) + geom_point()
+```
+
+##### Plotted cluster assignments with AZM resistance vs. CIP resistance
+##### There appear to be few observations because many of the isolates have similar or the same MIC values. The points are superimposed/overlapped
+
+```{r}
+pamclust<-pam_dat %>% mutate(cluster=as.factor(pam$clustering))
+pamclust %>% ggplot(aes(CIP.Rslt,AXO.Rslt,color=cluster)) + geom_point()
+```
+
+##### Plotted cluster assignments with AXO resistance vs. CIP resistance
+
+```{r}
+pamclust<-pam_dat %>% mutate(cluster=as.factor(pam$clustering))
+pamclust %>% ggplot(aes(AZM.Rslt,AXO.Rslt,color=cluster)) + geom_point()
+```
+
+##### Plotted cluster assignments with AXO resistance vs. AZM resistance
+
+
+####Summarize the clusters
+```{r}
+pamclust %>% group_by(cluster) %>% summarize_if(is.numeric,mean,na.rm=T)
+```
+##### Want to see what our clusters look like in terms of original variables
+
+###### Looking at final medoids
+```{r}
+s_res %>%slice(pam$id.med)
+```
+##### These are the most representative observations
+##### Clustering was performed to reproduce the underlying structure of my dataset without using the original vriables by creating new, artificial groupings/clusters. Our cluster assignment reflected these original variables fairly well with some discrepancies. AS we compared mediods to the means of the original variables, we can see that PAM was able to classify serotypes with surprising accuracy, providing a structure very similar to that prescribed by the original variables. 
+
+```{r}
+# find the average silhouette width
+pam$silinfo$avg.width
+```
+
+```{r}
+# visualize it
+pam$silinfo$widths %>% as.data.frame %>% mutate(x=dim(pam$silinfo$widths)[1]:1)%>% 
+ggplot(aes(x, y=sil_width, fill=as.factor(cluster))) + geom_bar(stat="identity") + xlab("") +
+facet_grid(cluster~., scales="free_y") + coord_flip() + theme(legend.position="none")
+```
+##### The average silhouette width is .979, indicating that a strong stucture has been found. 
+

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Posts on Dylan Pfannenstiel&#39;s Site</title>
+    <link>/post/</link>
+    <description>Recent content in Posts on Dylan Pfannenstiel&#39;s Site</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-US</language>
+    <lastBuildDate>Thu, 10 Dec 2020 00:00:00 +0000</lastBuildDate><atom:link href="/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Test Post 1</title>
+      <link>/post/2020/12/10/test-post-1/</link>
+      <pubDate>Thu, 10 Dec 2020 00:00:00 +0000</pubDate>
+      
+      <guid>/post/2020/12/10/test-post-1/</guid>
+      <description> Hi, Welcome! I&#39;m sad that my college career is coming to and end in this fashion, AKA zoom U.
+ Link to project 1
+Link to google
+x&amp;lt;-2+2 y&amp;lt;-3+3 x+y ## [1] 10 install.packages(&amp;quot;reticulate&amp;quot;,repos = &amp;quot;http://cran.us.r-project.org&amp;quot;) ## Installing package into &amp;#39;/stor/home/dmp2636/R/x86_64-pc-linux-gnu-library/3.6&amp;#39; ## (as &amp;#39;lib&amp;#39; is unspecified) library(reticulate) x=&amp;quot;Hello UT&amp;quot; print(x) ## Hello UT ... ## Ellipsis  </description>
+    </item>
+    
+  </channel>
+</rss>

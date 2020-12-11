@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="Dylan Pfannenstiel" />
+    
+    <link rel="shortcut icon" type="image/x-icon" href="../../img/favicon.ico">
+    <title>Project 1: Exploratory Data Analysis</title>
+    <meta name="generator" content="Hugo 0.79.0" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="../../css/main.css" />
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,400,200bold,400old" />
+    
+    <!--[if lt IE 9]>
+			<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+			<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
+
+    
+  </head>
+
+  <body>
+    <div id="wrap">
+      
+      <nav class="navbar navbar-default">
+  <div class="container">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="../../"><i class="fa fa-home"></i></a>
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <div class="navbar-collapse collapse" id="navbar">
+      <ul class="nav navbar-nav navbar-right">
+      
+        
+        <li><a href="../../post/">BLOG</a></li>
+        
+        <li><a href="../../projects/">PROJECTS</a></li>
+        
+        <li><a href="../../resume/">RESUME</a></li>
+        
+      
+      </ul>
+    </div>
+  </div>
+</nav>
+
+      <div class="container">
+        <div class="blog-post">
+          <h3>
+            <strong><a href="../../project/project1/">Project 1: Exploratory Data Analysis</a></strong>
+          </h3>
+        </div>
+ 
+<div class="blog-title">
+          <h4>
+         January 1, 0001 
+            &nbsp;&nbsp;
+            
+          </h4>
+        </div>
+
+        <div class="panel panel-default">
+          <div class="panel-body">
+            <div class="blogpost">
+              
+
+
+<div id="dylan-pfannenstiel-dmp2636" class="section level1">
+<h1>Dylan Pfannenstiel, dmp2636</h1>
+<div id="intro-and-importing" class="section level2">
+<h2>Intro and Importing</h2>
+<div id="i-selected-data-on-reported-antibiotic-resistance-in-clinical-salmonella-isolates.-this-data-were-collected-in-the-year-2015.-there-are-3-separate-datasets-each-with-data-on-a-different-antibiotic.-all-include-year-genus-specimen-id-genus-species-and-serotype-serotype-is-a-way-to-distinguish-within-the-same-species-based-on-surface-antigens.-the-first-dataset-gives-data-for-ciproflaxin-cip-resistance.-the-second-dataset-gives-data-for-azithromycin-azm-resistance.-the-third-dataset-gives-data-for-ceftriaxone-axo-resistance.these-are-three-commonly-prescribed-antibiotics-used-in-the-treatment-of-very-severe-infections.-it-may-be-that-as-resitance-to-one-antibiotic-increases-there-is-increased-resistance-to-another-even-of-a-different-class.-if-observed-this-could-be-a-result-of-altered-expression-of-non-specific-resistance-mechanisms-such-as-efflux-pumps." class="section level5">
+<h5>I selected data on reported antibiotic resistance in clinical <em>Salmonella</em> isolates. This data were collected in the year 2015. There are 3 separate datasets each with data on a different antibiotic. All include year, genus, specimen ID, genus, species, and serotype (serotype is a way to distinguish within the same species based on surface antigens). The first dataset gives data for ciproflaxin (CIP) resistance. The second dataset gives data for azithromycin (AZM) resistance. The third dataset gives data for ceftriaxone (AXO) resistance.These are three commonly prescribed antibiotics used in the treatment of very severe infections. It may be that as resitance to one antibiotic increases, there is increased resistance to another (even of a different class). If observed, this could be a result of altered expression of non-specific resistance mechanisms such as efflux pumps.</h5>
+<pre class="r"><code>library(tidyverse)
+library(cluster)
+library(RColorBrewer)</code></pre>
+</div>
+<div id="all-datasets-were-downloaded-from-httpswwwn.cdc.govnarmsnow-as-.csv-files." class="section level5">
+<h5>All datasets were downloaded from <a href="https://wwwn.cdc.gov/narmsnow/" class="uri">https://wwwn.cdc.gov/narmsnow/</a> as .csv files.</h5>
+<pre class="r"><code># read in the datasets
+s_cipR &lt;- read.csv(&quot;s_cipR.csv&quot;)
+s_azmR &lt;- read.csv(&quot;s_azmR.csv&quot;)
+s_axoR &lt;- read.csv(&quot;s_axoR.csv&quot;)
+# examine dimensions and variables
+dim(s_cipR)</code></pre>
+<pre><code>## [1] 1806    7</code></pre>
+<pre class="r"><code>head(s_cipR)</code></pre>
+<pre><code>##   X Specimen.ID      Genus  Species       Serotype Data.Year CIP.Rslt
+## 1 1 2015AM-0001 Salmonella enterica    Enteritidis      2015    0.015
+## 2 2 2015AM-0005 Salmonella enterica        Baildon      2015    0.015
+## 3 3 2015AM-0006 Salmonella enterica IV 48:z4,z32:-      2015    0.015
+## 4 4 2015AM-0007 Salmonella enterica        Newport      2015    0.015
+## 5 5 2015AM-0014 Salmonella enterica       Hartford      2015    0.015
+## 6 6 2015AM-0015 Salmonella enterica    Typhimurium      2015    0.015</code></pre>
+<pre class="r"><code>dim(s_azmR)</code></pre>
+<pre><code>## [1] 1806    7</code></pre>
+<pre class="r"><code>head(s_azmR)</code></pre>
+<pre><code>##   X Specimen.ID      Genus  Species       Serotype Data.Year AZM.Rslt
+## 1 1 2015AM-0001 Salmonella enterica    Enteritidis      2015        2
+## 2 2 2015AM-0005 Salmonella enterica        Baildon      2015        2
+## 3 3 2015AM-0006 Salmonella enterica IV 48:z4,z32:-      2015        4
+## 4 4 2015AM-0007 Salmonella enterica        Newport      2015        2
+## 5 5 2015AM-0014 Salmonella enterica       Hartford      2015        4
+## 6 6 2015AM-0015 Salmonella enterica    Typhimurium      2015        2</code></pre>
+<pre class="r"><code>dim(s_axoR)</code></pre>
+<pre><code>## [1] 1806    7</code></pre>
+<pre class="r"><code>head(s_axoR)</code></pre>
+<pre><code>##   X Specimen.ID      Genus  Species       Serotype Data.Year AXO.Rslt
+## 1 1 2015AM-0001 Salmonella enterica    Enteritidis      2015     0.25
+## 2 2 2015AM-0005 Salmonella enterica        Baildon      2015     0.25
+## 3 3 2015AM-0006 Salmonella enterica IV 48:z4,z32:-      2015     0.25
+## 4 4 2015AM-0007 Salmonella enterica        Newport      2015     0.25
+## 5 5 2015AM-0014 Salmonella enterica       Hartford      2015     0.25
+## 6 6 2015AM-0015 Salmonella enterica    Typhimurium      2015     0.25</code></pre>
+</div>
+<div id="note-these-are-data-from-clinical-isolates.-the-rslt-variable-provides-the-minimal-inhibitory-concentration-for-each-antibiotic-in-μgml.-this-test-result-provides-a-measure-of-antibiotic-resistance-with-higher-values-indicating-greater-resistance." class="section level5">
+<h5>Note: These are data from clinical isolates. The &quot;Rslt&quot; variable provides the minimal inhibitory concentration for each antibiotic in μg/mL. This test result provides a measure of antibiotic resistance, with higher values indicating greater resistance.</h5>
+</div>
+</div>
+<div id="joining-and-merging" class="section level2">
+<h2>Joining and Merging</h2>
+<div id="i-joined-on-the-common-variables-listed-below-as-they-were-found-in-each-dataset" class="section level5">
+<h5>I joined on the common variables listed below, as they were found in each dataset</h5>
+<pre class="r"><code># join the first 2
+cip_azm &lt;- left_join(s_cipR, s_azmR, by = c(&quot;Specimen.ID&quot;, &quot;Genus&quot;, 
+    &quot;Species&quot;, &quot;Serotype&quot;, &quot;Data.Year&quot;))
+
+# join that to the last one
+s_res &lt;- left_join(cip_azm, s_axoR, c(&quot;Specimen.ID&quot;, &quot;Genus&quot;, 
+    &quot;Species&quot;, &quot;Serotype&quot;, &quot;Data.Year&quot;))
+head(s_res)</code></pre>
+<pre><code>##   X.x Specimen.ID      Genus  Species       Serotype Data.Year CIP.Rslt X.y
+## 1   1 2015AM-0001 Salmonella enterica    Enteritidis      2015    0.015   1
+## 2   2 2015AM-0005 Salmonella enterica        Baildon      2015    0.015   2
+## 3   3 2015AM-0006 Salmonella enterica IV 48:z4,z32:-      2015    0.015   3
+## 4   4 2015AM-0007 Salmonella enterica        Newport      2015    0.015   4
+## 5   5 2015AM-0014 Salmonella enterica       Hartford      2015    0.015   5
+## 6   6 2015AM-0015 Salmonella enterica    Typhimurium      2015    0.015   6
+##   AZM.Rslt X AXO.Rslt
+## 1        2 1     0.25
+## 2        2 2     0.25
+## 3        4 3     0.25
+## 4        2 4     0.25
+## 5        4 5     0.25
+## 6        2 6     0.25</code></pre>
+<pre class="r"><code>dim(s_res)</code></pre>
+<pre><code>## [1] 1806   11</code></pre>
+</div>
+<div id="after-performing-a-two-left-joins-to-combine-all-3-datasets-we-were-left-with-1806-individual-observations.-each-original-dataset-s_cipr-s_azmr-s_axor-all-contained-1806-observations-as-well.-no-observations-were-dropped.-we-selected-a-left-join-since-we-wanted-to-retain-all-rows-and-columns-in-the-left-dataframe-s_cipr-in-the-first-join-and-the-combined-s_ciprs_azmr-in-the-second-join.-with-each-left-join-we-wanted-to-simply-add-in-the-resistance-values-e.g.-azm.rslt-in-cases-in-which-there-was-a-match-to-the-leftexisting-data." class="section level5">
+<h5>After performing a two left joins to combine all 3 datasets, we were left with 1806 individual observations. Each original dataset (s_cipR, s_azmR, s_axoR) all contained 1806 observations as well. No observations were dropped. We selected a left join since we wanted to retain all rows and columns in the left dataframe (s_cipR in the first join and the combined s_cipR+s_azmR in the second join). With each left join we wanted to simply add in the resistance values (e.g. AZM.Rslt) in cases in which there was a match to the left/existing data.</h5>
+</div>
+</div>
+<div id="wranglingsummary" class="section level2">
+<h2>Wrangling/Summary</h2>
+<div id="select" class="section level5">
+<h5>Select</h5>
+</div>
+<div id="we-need-to-first-drop-the-unecessary-x-identifier-variables-from-the-joined-dataset" class="section level5">
+<h5>We need to first drop the unecessary &quot;X&quot; identifier variables from the joined dataset</h5>
+<pre class="r"><code>s_res &lt;- s_res %&gt;% select(-X.x, -X.y, -X)
+head(s_res)</code></pre>
+<pre><code>##   Specimen.ID      Genus  Species       Serotype Data.Year CIP.Rslt AZM.Rslt
+## 1 2015AM-0001 Salmonella enterica    Enteritidis      2015    0.015        2
+## 2 2015AM-0005 Salmonella enterica        Baildon      2015    0.015        2
+## 3 2015AM-0006 Salmonella enterica IV 48:z4,z32:-      2015    0.015        4
+## 4 2015AM-0007 Salmonella enterica        Newport      2015    0.015        2
+## 5 2015AM-0014 Salmonella enterica       Hartford      2015    0.015        4
+## 6 2015AM-0015 Salmonella enterica    Typhimurium      2015    0.015        2
+##   AXO.Rslt
+## 1     0.25
+## 2     0.25
+## 3     0.25
+## 4     0.25
+## 5     0.25
+## 6     0.25</code></pre>
+</div>
+<div id="mutate-case_when" class="section level5">
+<h5>mutate + case_when</h5>
+</div>
+<div id="i-want-to-add-columns-that-classify-the-susceptibility-of-the-salmonella-isolate-based-on-the-mic-values.-chart-given-here-httpswww.fda.govmedia92766download" class="section level5">
+<h5>I want to add columns that classify the susceptibility of the <em>Salmonella</em> isolate based on the MIC values. (chart given here <a href="https://www.fda.gov/media/92766/download" class="uri">https://www.fda.gov/media/92766/download</a>)</h5>
+<pre class="r"><code># use case_when to create a conditional mutation that gives
+# us susceptibility classification
+s_res &lt;- s_res %&gt;% mutate(CIP.Susc = case_when(CIP.Rslt &lt;= 0.06 ~ 
+    &quot;S&quot;, CIP.Rslt &gt;= 0.12 &amp; CIP.Rslt &lt;= 0.5 ~ &quot;I&quot;, CIP.Rslt &gt;= 
+    1 ~ &quot;R&quot;)) %&gt;% mutate(AZM.Susc = case_when(AZM.Rslt &lt;= 16 ~ 
+    &quot;S&quot;, AZM.Rslt &gt;= 32 ~ &quot;R&quot;)) %&gt;% mutate(AXO.Susc = case_when(AXO.Rslt &lt;= 
+    1 ~ &quot;S&quot;, AXO.Rslt == 2 ~ &quot;I&quot;, AXO.Rslt &gt;= 4 ~ &quot;R&quot;))
+head(s_res)</code></pre>
+<pre><code>##   Specimen.ID      Genus  Species       Serotype Data.Year CIP.Rslt AZM.Rslt
+## 1 2015AM-0001 Salmonella enterica    Enteritidis      2015    0.015        2
+## 2 2015AM-0005 Salmonella enterica        Baildon      2015    0.015        2
+## 3 2015AM-0006 Salmonella enterica IV 48:z4,z32:-      2015    0.015        4
+## 4 2015AM-0007 Salmonella enterica        Newport      2015    0.015        2
+## 5 2015AM-0014 Salmonella enterica       Hartford      2015    0.015        4
+## 6 2015AM-0015 Salmonella enterica    Typhimurium      2015    0.015        2
+##   AXO.Rslt CIP.Susc AZM.Susc AXO.Susc
+## 1     0.25        S        S        S
+## 2     0.25        S        S        S
+## 3     0.25        S        S        S
+## 4     0.25        S        S        S
+## 5     0.25        S        S        S
+## 6     0.25        S        S        S</code></pre>
+</div>
+<div id="note-s-is-susceptible-i-is-intermediate-and-r-is-resistant." class="section level5">
+<h5>Note: S is susceptible, I is intermediate, and R is resistant.</h5>
+</div>
+<div id="summary-stats" class="section level5">
+<h5>Summary stats</h5>
+<pre class="r"><code># calculate mean MIC values for each antibiotic
+s_res %&gt;% summarize(meanMICcip = mean(CIP.Rslt), meanMICazm = mean(AZM.Rslt), 
+    meanMICaxo = mean(AXO.Rslt))</code></pre>
+<pre><code>##   meanMICcip meanMICazm meanMICaxo
+## 1  0.0355371   3.653516   0.857835</code></pre>
+<pre class="r"><code># number of distinct MIC values reported for each antibiotic
+s_res %&gt;% summarize(disMICcip = n_distinct(CIP.Rslt), distMICazm = n_distinct(AZM.Rslt), 
+    distMICaxo = n_distinct(AXO.Rslt))</code></pre>
+<pre><code>##   disMICcip distMICazm distMICaxo
+## 1         9          5          9</code></pre>
+<pre class="r"><code># standard deviation for MIC values for each antibiotic
+s_res %&gt;% summarize(sdMICcip = sd(CIP.Rslt), sdMICazm = sd(AZM.Rslt), 
+    sdMICaxo = sd(AXO.Rslt))</code></pre>
+<pre><code>##    sdMICcip sdMICazm sdMICaxo
+## 1 0.1580069 1.505162 4.190648</code></pre>
+<pre class="r"><code># now do the same, but when grouped by species and serotype
+s_res %&gt;% group_by(Species, Serotype) %&gt;% summarize(meanMICcip = mean(CIP.Rslt), 
+    meanMICazm = mean(AZM.Rslt), meanMICaxo = mean(AXO.Rslt))</code></pre>
+<pre><code>## # A tibble: 108 x 5
+## # Groups:   Species [1]
+##    Species  Serotype     meanMICcip meanMICazm meanMICaxo
+##    &lt;fct&gt;    &lt;fct&gt;             &lt;dbl&gt;      &lt;dbl&gt;      &lt;dbl&gt;
+##  1 enterica Adelaide         0.112        3.6        0.25
+##  2 enterica Agbeni           0.015        3.33       0.25
+##  3 enterica Agona            0.0591       4.36       1.68
+##  4 enterica Albany           0.015        4          0.25
+##  5 enterica Albert           0.5          8          0.25
+##  6 enterica Altona           0.015        4          0.25
+##  7 enterica Anatum           0.128        3.56       6.37
+##  8 enterica Arechavaleta     0.015        3          0.25
+##  9 enterica Baildon          0.0500       2.67       0.25
+## 10 enterica Bareilly         0.0444       4.47       0.25
+## # … with 98 more rows</code></pre>
+<pre class="r"><code># minimum when grouped
+s_res %&gt;% group_by(Species, Serotype) %&gt;% summarize(minMICcip = min(CIP.Rslt), 
+    minMICazm = min(AZM.Rslt), minMICaxo = min(AXO.Rslt))</code></pre>
+<pre><code>## # A tibble: 108 x 5
+## # Groups:   Species [1]
+##    Species  Serotype     minMICcip minMICazm minMICaxo
+##    &lt;fct&gt;    &lt;fct&gt;            &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
+##  1 enterica Adelaide         0.015      2         0.25
+##  2 enterica Agbeni           0.015      2         0.25
+##  3 enterica Agona            0.015      4         0.25
+##  4 enterica Albany           0.015      4         0.25
+##  5 enterica Albert           0.5        8         0.25
+##  6 enterica Altona           0.015      4         0.25
+##  7 enterica Anatum           0.015      0.25      0.25
+##  8 enterica Arechavaleta     0.015      2         0.25
+##  9 enterica Baildon          0.015      2         0.25
+## 10 enterica Bareilly         0.015      2         0.25
+## # … with 98 more rows</code></pre>
+</div>
+<div id="the-tables-above-describe-the-mean-mic-values-for-each-antibiotic-the-number-of-distinct-mic-values-for-each-antibiotic-and-the-standard-deviation-of-mic-values-for-each.-it-also-provides-the-mean-mic-and-minimum-mic-for-all-3-antibiotics-when-grouped-by-species-and-serotype." class="section level5">
+<h5>The tables above describe the mean MIC values for each antibiotic, the number of distinct MIC values for each antibiotic, and the standard deviation of MIC values for each. It also provides the mean MIC and minimum MIC for all 3 antibiotics when grouped by species and serotype.</h5>
+</div>
+<div id="now-say-weve-read-a-lot-of-literature-on-salmonella-serotype-enteritidis.-this-is-a-pathogen-of-interest.-we-can-pull-out-that-row-to-examine-its-mean-mics-via-filter" class="section level5">
+<h5>Now say we've read a lot of literature on <em>Salmonella</em> serotype Enteritidis. This is a pathogen of interest. We can pull out that row to examine its mean MICs via filter</h5>
+<pre class="r"><code>s_res %&gt;% group_by(Species, Serotype) %&gt;% summarize(meanMICcip = mean(CIP.Rslt), 
+    meanMICazm = mean(AZM.Rslt), meanMICaxo = mean(AXO.Rslt)) %&gt;% 
+    filter(Serotype == &quot;Enteritidis&quot;)</code></pre>
+<pre><code>## # A tibble: 1 x 5
+## # Groups:   Species [1]
+##   Species  Serotype    meanMICcip meanMICazm meanMICaxo
+##   &lt;fct&gt;    &lt;fct&gt;            &lt;dbl&gt;      &lt;dbl&gt;      &lt;dbl&gt;
+## 1 enterica Enteritidis     0.0385       3.46      0.273</code></pre>
+</div>
+<div id="now-lets-pivot-the-original-summary-table-to-get-a-different-look" class="section level5">
+<h5>Now let's pivot the original summary table to get a different look</h5>
+</div>
+</div>
+<div id="tidyingpivoting" class="section level2">
+<h2>Tidying/Pivoting</h2>
+<div id="pivoting-wide" class="section level5">
+<h5>pivoting wide</h5>
+<pre class="r"><code># reshape table to wide (very wide) format. Every
+# Serotype/MIC has its own column
+wides_res &lt;- s_res %&gt;% group_by(Species, Serotype) %&gt;% summarize(meanMICcip = mean(CIP.Rslt), 
+    meanMICazm = mean(AZM.Rslt), meanMICaxo = mean(AXO.Rslt)) %&gt;% 
+    pivot_wider(names_from = &quot;Serotype&quot;, values_from = c(&quot;meanMICcip&quot;, 
+        &quot;meanMICazm&quot;, &quot;meanMICaxo&quot;))
+head(wides_res)</code></pre>
+<pre><code>## # A tibble: 1 x 325
+## # Groups:   Species [1]
+##   Species meanMICcip_Adel… meanMICcip_Agbe… meanMICcip_Agona meanMICcip_Alba…
+##   &lt;fct&gt;              &lt;dbl&gt;            &lt;dbl&gt;            &lt;dbl&gt;            &lt;dbl&gt;
+## 1 enteri…            0.112            0.015           0.0591            0.015
+## # … with 320 more variables: meanMICcip_Albert &lt;dbl&gt;, meanMICcip_Altona &lt;dbl&gt;,
+## #   meanMICcip_Anatum &lt;dbl&gt;, meanMICcip_Arechavaleta &lt;dbl&gt;,
+## #   meanMICcip_Baildon &lt;dbl&gt;, meanMICcip_Bareilly &lt;dbl&gt;,
+## #   meanMICcip_Berta &lt;dbl&gt;, meanMICcip_Blockley &lt;dbl&gt;,
+## #   meanMICcip_Bovismorbificans &lt;dbl&gt;, meanMICcip_Braenderup &lt;dbl&gt;,
+## #   meanMICcip_Brandenburg &lt;dbl&gt;, meanMICcip_Brive &lt;dbl&gt;,
+## #   meanMICcip_Bullbay &lt;dbl&gt;, meanMICcip_Cerro &lt;dbl&gt;, meanMICcip_Chailey &lt;dbl&gt;,
+## #   meanMICcip_Chester &lt;dbl&gt;, meanMICcip_Clackamas &lt;dbl&gt;,
+## #   meanMICcip_Cotham &lt;dbl&gt;, meanMICcip_Derby &lt;dbl&gt;, meanMICcip_Dublin &lt;dbl&gt;,
+## #   meanMICcip_Durban &lt;dbl&gt;, meanMICcip_Eastbourne &lt;dbl&gt;, meanMICcip_Eko &lt;dbl&gt;,
+## #   meanMICcip_Enteritidis &lt;dbl&gt;, meanMICcip_Gaminara &lt;dbl&gt;,
+## #   meanMICcip_Give &lt;dbl&gt;, meanMICcip_Hadar &lt;dbl&gt;, meanMICcip_Hannover &lt;dbl&gt;,
+## #   meanMICcip_Hartford &lt;dbl&gt;, meanMICcip_Havana &lt;dbl&gt;,
+## #   meanMICcip_Heidelberg &lt;dbl&gt;, meanMICcip_Hvittingfoss &lt;dbl&gt;, `meanMICcip_I
+## #   4,[5],12:b:-` &lt;dbl&gt;, `meanMICcip_I 4,[5],12:b:- var. L(+) tartrate+` &lt;dbl&gt;,
+## #   `meanMICcip_I 4,[5],12:i:-` &lt;dbl&gt;, `meanMICcip_I 45:b:-` &lt;dbl&gt;,
+## #   `meanMICcip_I 9,12:-:1,5` &lt;dbl&gt;, `meanMICcip_I 9,12:l,z28:-` &lt;dbl&gt;,
+## #   `meanMICcip_I Rough:nonmotile` &lt;dbl&gt;, `meanMICcip_I Rough:z:1,6` &lt;dbl&gt;,
+## #   `meanMICcip_IIIa 48:g,z51:-` &lt;dbl&gt;, `meanMICcip_IIIa 56:z4,z23:-` &lt;dbl&gt;,
+## #   `meanMICcip_IIIb 11:l,[v],[z13]:z53` &lt;dbl&gt;, meanMICcip_Indiana &lt;dbl&gt;,
+## #   meanMICcip_Infantis &lt;dbl&gt;, meanMICcip_Inverness &lt;dbl&gt;,
+## #   meanMICcip_Irumu &lt;dbl&gt;, meanMICcip_Isangi &lt;dbl&gt;, `meanMICcip_IV
+## #   40:z4,z32:-` &lt;dbl&gt;, `meanMICcip_IV 44:z4,z23:-` &lt;dbl&gt;, `meanMICcip_IV
+## #   44:z4,z24:-` &lt;dbl&gt;, `meanMICcip_IV 48:z4,z32:-` &lt;dbl&gt;, `meanMICcip_IV
+## #   50:z4,z23:-` &lt;dbl&gt;, `meanMICcip_IV 6,7:z4,z23:-` &lt;dbl&gt;,
+## #   meanMICcip_Javiana &lt;dbl&gt;, meanMICcip_Kentucky &lt;dbl&gt;,
+## #   meanMICcip_Kiambu &lt;dbl&gt;, meanMICcip_Krefeld &lt;dbl&gt;,
+## #   meanMICcip_Litchfield &lt;dbl&gt;, meanMICcip_London &lt;dbl&gt;,
+## #   meanMICcip_Manhattan &lt;dbl&gt;, meanMICcip_Mbandaka &lt;dbl&gt;,
+## #   meanMICcip_Miami &lt;dbl&gt;, meanMICcip_Minnesota &lt;dbl&gt;,
+## #   meanMICcip_Mississippi &lt;dbl&gt;, meanMICcip_Monschaui &lt;dbl&gt;,
+## #   meanMICcip_Montevideo &lt;dbl&gt;, meanMICcip_Muenchen &lt;dbl&gt;,
+## #   meanMICcip_Muenster &lt;dbl&gt;, meanMICcip_Napoli &lt;dbl&gt;,
+## #   meanMICcip_Newport &lt;dbl&gt;, meanMICcip_Norwich &lt;dbl&gt;,
+## #   meanMICcip_Oranienburg &lt;dbl&gt;, meanMICcip_Oslo &lt;dbl&gt;,
+## #   meanMICcip_Panama &lt;dbl&gt;, `meanMICcip_Paratyphi B var. L(+)
+## #   tartrate+` &lt;dbl&gt;, meanMICcip_Pensacola &lt;dbl&gt;, meanMICcip_Plymouth &lt;dbl&gt;,
+## #   meanMICcip_Pomona &lt;dbl&gt;, meanMICcip_Poona &lt;dbl&gt;, meanMICcip_Reading &lt;dbl&gt;,
+## #   meanMICcip_Rissen &lt;dbl&gt;, meanMICcip_Roodepoort &lt;dbl&gt;,
+## #   meanMICcip_Rubislaw &lt;dbl&gt;, meanMICcip_Saintpaul &lt;dbl&gt;,
+## #   meanMICcip_Sandiego &lt;dbl&gt;, meanMICcip_Schwarzengrund &lt;dbl&gt;,
+## #   meanMICcip_Senftenberg &lt;dbl&gt;, meanMICcip_Singapore &lt;dbl&gt;,
+## #   meanMICcip_Stanley &lt;dbl&gt;, meanMICcip_Stanleyville &lt;dbl&gt;,
+## #   `meanMICcip_Subspecies I, Group D1` &lt;dbl&gt;, meanMICcip_Tallahassee &lt;dbl&gt;,
+## #   meanMICcip_Telelkebir &lt;dbl&gt;, meanMICcip_Tennessee &lt;dbl&gt;,
+## #   meanMICcip_Thompson &lt;dbl&gt;, meanMICcip_Toucra &lt;dbl&gt;,
+## #   meanMICcip_Typhimurium &lt;dbl&gt;, `meanMICcip_Typhimurium var. 5-` &lt;dbl&gt;,
+## #   meanMICcip_Uganda &lt;dbl&gt;, …</code></pre>
+</div>
+<div id="columns-is-ridiculous-so-lets-return-to-our-original-table" class="section level5">
+<h5>325 columns is ridiculous so let's return to our original table</h5>
+</div>
+<div id="pivoting-again-arrange-group_by" class="section level5">
+<h5>pivoting again + arrange() + group_by()</h5>
+<pre class="r"><code># There are too many columns to be useful, so let&#39;s reshape this table again
+wides_res %&gt;% pivot_longer(2:325) %&gt;%
+  separate(name,into=c(&quot;Rslt&quot;,&quot;Serotype&quot;)) %&gt;%
+  group_by(Serotype) %&gt;% # now we need to recreate new columns with the MIC names
+  mutate(row = row_number()) %&gt;% # without this unique identifier, the values are lost somehow
+  pivot_wider(names_from=&quot;Rslt&quot;,values_from=&quot;value&quot;) %&gt;%
+  select(-row) %&gt;% arrange(Serotype) %&gt;%
+  # but now each antibiotic is separated between rows
+  # We need to collapse these rows into 1 row while keeping the same columns
+  group_by(Species,Serotype) %&gt;% summarize(meanMICcip=sum(meanMICcip,na.rm=T),
+                                   meanMICazm=sum(meanMICazm,na.rm=T),
+                                   meanMICaxo=sum(meanMICaxo,na.rm=T))</code></pre>
+<pre><code>## # A tibble: 94 x 5
+## # Groups:   Species [1]
+##    Species  Serotype     meanMICcip meanMICazm meanMICaxo
+##    &lt;fct&gt;    &lt;chr&gt;             &lt;dbl&gt;      &lt;dbl&gt;      &lt;dbl&gt;
+##  1 enterica Adelaide         0.112        3.6        0.25
+##  2 enterica Agbeni           0.015        3.33       0.25
+##  3 enterica Agona            0.0591       4.36       1.68
+##  4 enterica Albany           0.015        4          0.25
+##  5 enterica Albert           0.5          8          0.25
+##  6 enterica Altona           0.015        4          0.25
+##  7 enterica Anatum           0.128        3.56       6.37
+##  8 enterica Arechavaleta     0.015        3          0.25
+##  9 enterica Baildon          0.0500       2.67       0.25
+## 10 enterica Bareilly         0.0444       4.47       0.25
+## # … with 84 more rows</code></pre>
+<pre class="r"><code># now we&#39;ve restored the original long dataframe</code></pre>
+</div>
+<div id="correlation-between-the-mic-variables-cor" class="section level5">
+<h5>Correlation between the MIC variables, cor()</h5>
+<pre class="r"><code>abcor &lt;- s_res %&gt;% select(-Data.Year) %&gt;% select_if(is.numeric) %&gt;% 
+    cor(use = &quot;pair&quot;)
+abcor</code></pre>
+<pre><code>##            CIP.Rslt  AZM.Rslt   AXO.Rslt
+## CIP.Rslt 1.00000000 0.2213665 0.06468706
+## AZM.Rslt 0.22136653 1.0000000 0.07534790
+## AXO.Rslt 0.06468706 0.0753479 1.00000000</code></pre>
+</div>
+<div id="there-is-a-weak-positive-correlation-between-azm-resistance-and-cip-resistance.-there-is-a-very-weak-positive-correlation-between-axo-resistance-and-cip-resistance-near-zero.-there-is-also-a-very-weak-positive-correlation-between-azm-and-axo-resistance-near-zero.-the-lack-of-strong-correlation-in-resistance-is-likley-due-to-the-fact-that-each-of-these-antibiotics-acts-through-a-different-mechanism.-as-a-result-resistance-that-occurs-is-liklely-to-only-provide-defense-against-that-certain-class-of-antibiotics.-more-data-would-be-needed-to-identify-a-possible-general-resistance-mechanism-as-mentioned-before." class="section level5">
+<h5>There is a weak positive correlation between AZM resistance and CIP resistance. There is a very weak positive correlation between AXO resistance and CIP resistance (near zero). There is also a very weak positive correlation between AZM and AXO resistance (near zero). The lack of strong correlation in resistance is likley due to the fact that each of these antibiotics acts through a different mechanism. As a result, resistance that occurs is liklely to only provide defense against that certain class of antibiotics. More data would be needed to identify a possible general resistance mechanism as mentioned before.</h5>
+</div>
+<div id="creating-correlation-heatmap" class="section level5">
+<h5>Creating correlation heatmap</h5>
+</div>
+<div id="tidying" class="section level5">
+<h5>tidying</h5>
+<pre class="r"><code># tidy the data into a nice dataframe for future use
+tidyabcor &lt;- abcor %&gt;% as.data.frame %&gt;% rownames_to_column(&quot;var1&quot;) %&gt;% 
+    pivot_longer(-1, names_to = &quot;var2&quot;, values_to = &quot;correlation&quot;)
+tidyabcor</code></pre>
+<pre><code>## # A tibble: 9 x 3
+##   var1     var2     correlation
+##   &lt;chr&gt;    &lt;chr&gt;          &lt;dbl&gt;
+## 1 CIP.Rslt CIP.Rslt      1     
+## 2 CIP.Rslt AZM.Rslt      0.221 
+## 3 CIP.Rslt AXO.Rslt      0.0647
+## 4 AZM.Rslt CIP.Rslt      0.221 
+## 5 AZM.Rslt AZM.Rslt      1     
+## 6 AZM.Rslt AXO.Rslt      0.0753
+## 7 AXO.Rslt CIP.Rslt      0.0647
+## 8 AXO.Rslt AZM.Rslt      0.0753
+## 9 AXO.Rslt AXO.Rslt      1</code></pre>
+</div>
+<div id="visualizing" class="section level3">
+<h3>Visualizing</h3>
+<div id="cor-heatmap" class="section level5">
+<h5>cor heatmap</h5>
+<pre class="r"><code>tidyabcor %&gt;% ggplot(aes(var1, var2, fill = correlation)) + geom_tile() + 
+    scale_fill_gradient2(low = &quot;red&quot;, mid = &quot;white&quot;, high = &quot;blue&quot;) + 
+    geom_text(aes(label = round(correlation, 2)), color = &quot;black&quot;, 
+        size = 4) + theme(axis.text.x = element_text(angle = 90, 
+    hjust = 1)) + coord_fixed()</code></pre>
+<p><img src="../../project/project1_files/figure-html/unnamed-chunk-12-1.png" width="672" style="display: block; margin: auto;" /> ##### See earlier correlation interpretation</p>
+<pre class="r"><code># there are too many serotypes to make readable plots. So
+# let&#39;s just look at the 10 serotypes that occur most
+# frequently
+s_res %&gt;% group_by(Serotype) %&gt;% summarize(n = n()) %&gt;% ungroup() %&gt;% 
+    arrange(desc(n)) %&gt;% slice(1:10)</code></pre>
+<pre><code>## # A tibble: 10 x 2
+##    Serotype           n
+##    &lt;fct&gt;          &lt;int&gt;
+##  1 Enteritidis      378
+##  2 Typhimurium      185
+##  3 Newport          168
+##  4 I 4,[5],12:i:-   117
+##  5 Javiana           98
+##  6 Muenchen          64
+##  7 Heidelberg        49
+##  8 Saintpaul         49
+##  9 Montevideo        48
+## 10 Infantis          47</code></pre>
+<pre class="r"><code># now that we know them, create a new dataset with only these
+# serotypes (for use in plotting)
+top10 &lt;- s_res %&gt;% filter(Serotype == c(&quot;Enteritidis&quot;, &quot;Typhimurium&quot;, 
+    &quot;Newport&quot;, &quot;I4,[5],12:i:-&quot;, &quot;Javiana&quot;, &quot;Muenchen&quot;, &quot;Heidelberg&quot;, 
+    &quot;Saintpaul&quot;, &quot;Montevideo&quot;, &quot;Infantis&quot;))
+head(top10)</code></pre>
+<pre><code>##   Specimen.ID      Genus  Species    Serotype Data.Year CIP.Rslt AZM.Rslt
+## 1 2015AM-0001 Salmonella enterica Enteritidis      2015    0.015        2
+## 2 2015AM-0105 Salmonella enterica Enteritidis      2015    0.015        2
+## 3 2015AM-0119 Salmonella enterica Enteritidis      2015    0.015        4
+## 4 2015AM-0141 Salmonella enterica Typhimurium      2015    0.030        4
+## 5 2015AM-0234 Salmonella enterica Typhimurium      2015    0.015        4
+## 6 2015AM-0252 Salmonella enterica     Newport      2015    0.015        2
+##   AXO.Rslt CIP.Susc AZM.Susc AXO.Susc
+## 1     0.25        S        S        S
+## 2     0.25        S        S        S
+## 3     0.25        S        S        S
+## 4     0.25        S        S        S
+## 5     0.25        S        S        S
+## 6     0.25        S        S        S</code></pre>
+</div>
+<div id="look-axo-resistance-across-the-serotypes.-each-isolate-gets-its-own-point" class="section level5">
+<h5>Look AXO resistance across the serotypes. Each isolate gets its own point</h5>
+<pre class="r"><code>ggplot(data = top10, aes(x = Serotype, y = AXO.Rslt, color = AXO.Susc)) + 
+    geom_point(alpha = 0.5, position = position_jitter(h = 0.15, 
+        w = 0.15)) + theme(axis.text.x = element_text(angle = 45, 
+    hjust = 1)) + ggtitle(&quot;Ceftriaxone (AXO) Resistance Across Serotypes&quot;) + 
+    ylab(&quot;AXO MIC (μg/mL)&quot;) + xlab(&quot;Serotype&quot;) + labs(color = &quot;AXO Susceptiblity&quot;) + 
+    scale_y_continuous(breaks = seq(0, 9, 1)) + scale_color_brewer(palette = &quot;Dark2&quot;)</code></pre>
+<p><img src="../../project/project1_files/figure-html/unnamed-chunk-14-1.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="since-there-were-many-isolates-with-the-same-or-similar-mics-i-used-jittering-to-try-to-show-more-of-the-observations.-the-scatterplot-maps-resistance-measured-by-mic-across-the-10-most-frequently-occuring-isolates.-the-majority-of-clinical-isolates-had-relatively-low-ceftriaxone-mics-and-were-classified-as-susceptible-good-news.-however-there-were-resistant-isolates-of-serotypes-infantis-and-typhimurium.-the-majority-of-observed-mics-fell-around-.25-μgml.-for-this-antibiotic-the-proportion-of-bacterial-isolates-that-are-resistant-is-very-low-suggesting-that-resistance-is-not-yet-wide-spread." class="section level5">
+<h5>Since there were many isolates with the same or similar MICs, I used jittering to try to show more of the observations. The scatterplot maps resistance (measured by MIC) across the 10 most frequently occuring isolates. The majority of clinical isolates had relatively low ceftriaxone MICs and were classified as susceptible (good news!). However, there were resistant isolates of serotypes Infantis and Typhimurium. The majority of observed MICs fell around .25 μg/mL. For this antibiotic, the proportion of bacterial isolates that are resistant is very low, suggesting that resistance is not yet wide spread.</h5>
+<pre class="r"><code>ggplot(data = top10, aes(x = Serotype)) + geom_bar(aes(y = CIP.Rslt, 
+    fill = Serotype), stat = &quot;summary&quot;, fun = mean) + geom_errorbar(aes(y = CIP.Rslt), 
+    stat = &quot;summary&quot;, fun.data = mean_se) + theme(axis.text.x = element_text(angle = 45, 
+    hjust = 1)) + ggtitle(&quot;Mean Ciproflaxin (CIP) Resistance Across Serotypes&quot;) + 
+    ylab(&quot;Mean CIP MIC (μg/mL)&quot;) + xlab(&quot;Serotype&quot;)</code></pre>
+<p><img src="../../project/project1_files/figure-html/unnamed-chunk-15-1.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="this-was-a-boxplot-describing-the-mean-ciproflaxin-mic-across-the-10-serotypes.-across-all-serotypes-typhimurium-exhibited-the-highest-mean-resistance-to-ciproflaxin.-however-the-differences-were-not-statistically-significant-due-to-high-standard-error.-while-some-serotypes-may-show-somehwat-greater-resistance-than-others-these-differences-are-not-large-enough-to-suggest-any-substantial-trends." class="section level5">
+<h5>This was a boxplot describing the mean ciproflaxin MIC across the 10 serotypes. Across all serotypes, typhimurium exhibited the highest mean resistance to ciproflaxin. However, the differences were not statistically significant due to high standard error. While some serotypes may show somehwat greater resistance than others, these differences are not large enough to suggest any substantial trends.</h5>
+</div>
+<div id="while-it-would-have-been-nice-to-visualize-the-data-for-all-serotypes-in-the-original-dataset-there-were-simply-too-many-to-create-a-readable-plot." class="section level5">
+<h5>While it would have been nice to visualize the data for all serotypes in the original dataset, there were simply too many to create a readable plot.</h5>
+</div>
+</div>
+</div>
+<div id="dimensionality-reduction---pam" class="section level2">
+<h2>Dimensionality Reduction - PAM</h2>
+<div id="choosing-number-of-clusters-with-silhoutte-width" class="section level5">
+<h5>Choosing number of clusters with silhoutte width</h5>
+</div>
+<div id="now-were-returning-to-using-the-full-dataset-with-all-serotypes-included" class="section level5">
+<h5>Now we're returning to using the full dataset with all serotypes included</h5>
+<pre class="r"><code>pam_dat &lt;- s_res %&gt;% select(6:8)  # only our numeric resistance variables of interest, creating PAM datset
+sil_width &lt;- vector()  # hold mean sil width
+for (i in 2:10) {
+    pam_fit &lt;- pam(pam_dat, k = i)  # solution
+    sil_width[i] &lt;- pam_fit$silinfo$avg.width
+}
+ggplot() + geom_line(aes(x = 1:10, y = sil_width)) + scale_x_continuous(name = &quot;k&quot;, 
+    breaks = 1:10)</code></pre>
+<p><img src="../../project/project1_files/figure-html/unnamed-chunk-16-1.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="k8-appears-most-suitable.-at-k8-average-silouhette-width-is-greatest-approaching-1-providing-evidence-of-a-strong-structure" class="section level5">
+<h5>k=8 appears most suitable. At k=8 average silouhette width is greatest (approaching 1), providing evidence of a strong structure</h5>
+</div>
+<div id="did-not-scale-data-since-all-mic-values-were-already-on-same-scale" class="section level5">
+<h5>Did not scale data since all MIC values were already on same scale</h5>
+<pre class="r"><code>pam &lt;- pam_dat %&gt;% pam(k = 8)
+pam</code></pre>
+<pre><code>## Medoids:
+##        ID CIP.Rslt AZM.Rslt AXO.Rslt
+## [1,] 1806    0.015        2     0.25
+## [2,] 1805    0.015        4     0.25
+## [3,] 1489    0.250       16     0.25
+## [4,] 1587    0.015        4    32.00
+## [5,] 1804    0.015        8     0.25
+## [6,] 1797    0.015        4     8.00
+## [7,] 1782    0.015        4    16.00
+## [8,] 1572    0.015        4    64.00
+## Clustering vector:
+##   [1] 1 1 2 1 2 1 2 2 1 2 2 1 1 2 2 2 1 1 1 2 1 1 1 1 1 1 2 1 2 2 2 1 1 2 1 1 2
+##  [38] 3 4 2 1 1 1 1 1 1 2 1 2 4 2 5 2 2 1 2 2 6 7 2 2 2 2 7 2 2 5 2 2 2 1 4 1 1
+##  [75] 2 1 2 1 2 5 2 2 2 2 1 2 2 2 2 7 2 7 1 5 4 2 2 2 2 1
+##  [ reached getOption(&quot;max.print&quot;) -- omitted 1706 entries ]
+## Objective function:
+##      build       swap 
+## 0.04235511 0.04235511 
+## 
+## Available components:
+##  [1] &quot;medoids&quot;    &quot;id.med&quot;     &quot;clustering&quot; &quot;objective&quot;  &quot;isolation&quot; 
+##  [6] &quot;clusinfo&quot;   &quot;silinfo&quot;    &quot;diss&quot;       &quot;call&quot;       &quot;data&quot;</code></pre>
+</div>
+<div id="ran-pam-function-on-new-pam-dataset" class="section level5">
+<h5>Ran pam function on new pam dataset</h5>
+</div>
+<div id="plotting" class="section level4">
+<h4>plotting</h4>
+<pre class="r"><code>pamclust &lt;- pam_dat %&gt;% mutate(cluster = as.factor(pam$clustering))  # save cluster assignments
+pamclust %&gt;% ggplot(aes(CIP.Rslt, AZM.Rslt, color = cluster)) + 
+    geom_point()</code></pre>
+<p><img src="../../project/project1_files/figure-html/unnamed-chunk-18-1.png" width="672" style="display: block; margin: auto;" /></p>
+<div id="plotted-cluster-assignments-with-azm-resistance-vs.-cip-resistance" class="section level5">
+<h5>Plotted cluster assignments with AZM resistance vs. CIP resistance</h5>
+</div>
+<div id="there-appear-to-be-few-observations-because-many-of-the-isolates-have-similar-or-the-same-mic-values.-the-points-are-superimposedoverlapped" class="section level5">
+<h5>There appear to be few observations because many of the isolates have similar or the same MIC values. The points are superimposed/overlapped</h5>
+<pre class="r"><code>pamclust &lt;- pam_dat %&gt;% mutate(cluster = as.factor(pam$clustering))
+pamclust %&gt;% ggplot(aes(CIP.Rslt, AXO.Rslt, color = cluster)) + 
+    geom_point()</code></pre>
+<p><img src="../../project/project1_files/figure-html/unnamed-chunk-19-1.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="plotted-cluster-assignments-with-axo-resistance-vs.-cip-resistance" class="section level5">
+<h5>Plotted cluster assignments with AXO resistance vs. CIP resistance</h5>
+<pre class="r"><code>pamclust &lt;- pam_dat %&gt;% mutate(cluster = as.factor(pam$clustering))
+pamclust %&gt;% ggplot(aes(AZM.Rslt, AXO.Rslt, color = cluster)) + 
+    geom_point()</code></pre>
+<p><img src="../../project/project1_files/figure-html/unnamed-chunk-20-1.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="plotted-cluster-assignments-with-axo-resistance-vs.-azm-resistance" class="section level5">
+<h5>Plotted cluster assignments with AXO resistance vs. AZM resistance</h5>
+</div>
+</div>
+<div id="summarize-the-clusters" class="section level4">
+<h4>Summarize the clusters</h4>
+<pre class="r"><code>pamclust %&gt;% group_by(cluster) %&gt;% summarize_if(is.numeric, mean, 
+    na.rm = T)</code></pre>
+<pre><code>## # A tibble: 8 x 4
+##   cluster CIP.Rslt AZM.Rslt AXO.Rslt
+##   &lt;fct&gt;      &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;
+## 1 1         0.0305     2.00    0.251
+## 2 2         0.0288     4       0.257
+## 3 3         0.738     16       0.25 
+## 4 4         0.0756     3.75   32    
+## 5 5         0.0530     8       0.25 
+## 6 6         0.123      4       8    
+## 7 7         0.0279     4.07   16    
+## 8 8         0.265      6      64</code></pre>
+<div id="want-to-see-what-our-clusters-look-like-in-terms-of-original-variables" class="section level5">
+<h5>Want to see what our clusters look like in terms of original variables</h5>
+<div id="looking-at-final-medoids" class="section level6">
+<h6>Looking at final medoids</h6>
+<pre class="r"><code>s_res %&gt;% slice(pam$id.med)</code></pre>
+<pre><code>##   Specimen.ID      Genus  Species            Serotype Data.Year CIP.Rslt
+## 1  2015K-0616 Salmonella enterica         Enteritidis      2015    0.015
+## 2 2015AM-3740 Salmonella enterica           Saintpaul      2015    0.015
+## 3 2015AM-3265 Salmonella enterica         Enteritidis      2015    0.250
+## 4 2015AM-3428 Salmonella enterica             Newport      2015    0.015
+## 5 2015AM-3739 Salmonella enterica      Schwarzengrund      2015    0.015
+## 6 2015AM-3720 Salmonella enterica Typhimurium var. 5-      2015    0.015
+## 7 2015AM-3688 Salmonella enterica             Newport      2015    0.015
+## 8 2015AM-3413 Salmonella enterica              Anatum      2015    0.015
+##   AZM.Rslt AXO.Rslt CIP.Susc AZM.Susc AXO.Susc
+## 1        2     0.25        S        S        S
+## 2        4     0.25        S        S        S
+## 3       16     0.25        I        S        S
+## 4        4    32.00        S        S        R
+## 5        8     0.25        S        S        S
+## 6        4     8.00        S        S        R
+## 7        4    16.00        S        S        R
+## 8        4    64.00        S        S        R</code></pre>
+</div>
+</div>
+<div id="these-are-the-most-representative-observations" class="section level5">
+<h5>These are the most representative observations</h5>
+</div>
+<div id="clustering-was-performed-to-reproduce-the-underlying-structure-of-my-dataset-without-using-the-original-vriables-by-creating-new-artificial-groupingsclusters.-our-cluster-assignment-reflected-these-original-variables-fairly-well-with-some-discrepancies.-as-we-compared-mediods-to-the-means-of-the-original-variables-we-can-see-that-pam-was-able-to-classify-serotypes-with-surprising-accuracy-providing-a-structure-very-similar-to-that-prescribed-by-the-original-variables." class="section level5">
+<h5>Clustering was performed to reproduce the underlying structure of my dataset without using the original vriables by creating new, artificial groupings/clusters. Our cluster assignment reflected these original variables fairly well with some discrepancies. AS we compared mediods to the means of the original variables, we can see that PAM was able to classify serotypes with surprising accuracy, providing a structure very similar to that prescribed by the original variables.</h5>
+<pre class="r"><code># find the average silhouette width
+pam$silinfo$avg.width</code></pre>
+<pre><code>## [1] 0.9790097</code></pre>
+<pre class="r"><code># visualize it
+pam$silinfo$widths %&gt;% as.data.frame %&gt;% mutate(x = dim(pam$silinfo$widths)[1]:1) %&gt;% 
+    ggplot(aes(x, y = sil_width, fill = as.factor(cluster))) + 
+    geom_bar(stat = &quot;identity&quot;) + xlab(&quot;&quot;) + facet_grid(cluster ~ 
+    ., scales = &quot;free_y&quot;) + coord_flip() + theme(legend.position = &quot;none&quot;)</code></pre>
+<p><img src="../../project/project1_files/figure-html/unnamed-chunk-24-1.png" width="672" style="display: block; margin: auto;" /> ##### The average silhouette width is .979, indicating that a strong stucture has been found.</p>
+</div>
+</div>
+</div>
+</div>
+
+            
+        <hr>         <div class="related-posts">
+                <h5>Related Posts</h5>
+                
+              </div> 
+            </div>
+          </div>
+
+   <hr>  <div class="disqus">
+  <div id="disqus_thread"></div>
+  <script type="text/javascript">
+
+    (function() {
+      
+      
+      if (window.location.hostname == "localhost")
+        return;
+
+      var disqus_shortname = '';
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  <a href="http://disqus.com/" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div> 
+        </div>
+      </div>
+    </div>
+
+    
+    <footer>
+  <div id="footer">
+    <div class="container">
+      <p class="text-muted">&copy; All rights reserved. Powered by <a href="https://gohugo.io/">Hugo</a> and
+      <a href="http://www.github.com/nurlansu/hugo-sustain/">sustain</a> with ♥</p>
+    </div>
+  </div>
+</footer>
+<div class="footer"></div>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="../../js/docs.min.js"></script>
+<script src="../../js/main.js"></script>
+
+<script src="../../js/ie10-viewport-bug-workaround.js"></script>
+
+
+    
+  </body>
+</html>

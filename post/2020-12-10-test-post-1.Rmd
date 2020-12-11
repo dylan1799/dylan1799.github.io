@@ -1,0 +1,32 @@
+---
+title: Test Post 1
+author: DMP
+date: '2020-12-10'
+slug: test-post-1
+categories: []
+tags: []
+description: ''
+---
+
+#Hi, Welcome!
+
+I'm sad that my college career is coming to and end in this fashion, AKA zoom U.
+
+![](/post/bevo.jpg){width=60%}
+
+[Link to project 1](/projects/project1/)
+
+[Link to google](https://www.google.com)
+
+```{r}
+x<-2+2
+y<-3+3
+x+y
+install.packages("reticulate",repos = "http://cran.us.r-project.org")
+library(reticulate)
+```
+
+```{python}
+x="Hello UT"
+print(x)
+...

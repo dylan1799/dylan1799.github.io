@@ -1,0 +1,314 @@
+---
+title: "Comp Project 2: Modeling, Testing, and Predicting"
+author: "Dylan Pfannenstiel, dmp2636 SDS348"
+date: "2020-11-18"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+install.packages("tidyverse",repos = "http://cran.us.r-project.org")
+library(knitr)
+hook_output = knit_hooks$get('output')
+knit_hooks$set(output = function(x, options) {
+  # this hook is used only when the linewidth option is not NULL
+  if (!is.null(n <- options$linewidth)) {
+    x = knitr:::split_lines(x)
+    # any lines wider than n should be wrapped
+    if (any(nchar(x) > n)) x = strwrap(x, width = n)
+    x = paste(x, collapse = '\n')
+  }
+  hook_output(x, options)
+})
+
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE,fig.align="center",warning=FALSE,message=FALSE,fig.width=8, fig.height=5, linewidth=60)
+options(tibble.width = 100,width = 100)
+library(tidyverse)
+
+class_diag<-function(probs,truth){
+  tab<-table(factor(probs>.5,levels=c("FALSE","TRUE")),truth)
+  acc=sum(diag(tab))/sum(tab)
+  sens=tab[2,2]/colSums(tab)[2]
+  spec=tab[1,1]/colSums(tab)[1]
+  ppv=tab[2,2]/rowSums(tab)[2]
+  f1=2*(sens*ppv)/(sens+ppv)
+
+  if(is.numeric(truth)==FALSE & is.logical(truth)==FALSE){
+    truth<-as.numeric(truth)-1}
+  
+  #CALCULATE EXACT AUC
+  ord<-order(probs, decreasing=TRUE)
+  probs <- probs[ord]; truth <- truth[ord]
+  
+  TPR=cumsum(truth)/max(1,sum(truth)) 
+  FPR=cumsum(!truth)/max(1,sum(!truth))
+  
+  dup<-c(probs[-1]>=probs[-length(probs)], FALSE)
+  TPR<-c(0,TPR[!dup],1); FPR<-c(0,FPR[!dup],1)
+  
+  n <- length(TPR)
+  auc<- sum( ((TPR[-1]+TPR[-n])/2) * (FPR[-1]-FPR[-n]) )
+
+  data.frame(acc,sens,spec,ppv,f1,auc)
+}
+```
+
+## Medicaid dataset
+*I am using the Medicaid Utilization dataset from https://vincentarelbundock.github.io/Rdatasets/datasets.html. The data were collected from a 1986 consumer survey and had 996 respondents (observations). There are a total of 14 variables. 'visits' gives the number of doctor visits. 'exposure' gives the length of the abulatory care observation period in days. 'age' gives the age of the respondent in years. 'income' gives the annual household income. 'health1' and 'health2' are the first and second principal components/1000 of the three health variables:functional limitations, acute conditions, and chronic conditions. These provide a measure of the quality of health of the respondent. 'access' gives us the availability of health services, with 0 being low and 1 high. 'married' tells us the maritial status of the individuals (Yes/no). 'gender' indicates male or female. 'ethnicity' is given as caucasian or other. 'school' gives the number of years of schooling completed. 'enrollment' tells us whether the individual is in a medicaid demonstration program. 'program' tells us whether an individual participates in the Aid to Families with Dependent Children program or the Supplementary Security Income program*
+```{r}
+medicaid <- read.csv("Medicaid1986.csv")
+medicaid %>% na.omit ->medicaid
+head(medicaid)
+```
+
+## MANOVA Assumptions
+
+```{r}
+install.packages("rstatix",repos = "http://cran.us.r-project.org")
+library(rstatix)
+
+group <- medicaid$ethnicity
+DVs <- medicaid %>% select(visits,income,health1,school,access)
+
+#Test multivariate normality for each group (null: assumption met)
+sapply(split(DVs,group), mshapiro_test)
+
+
+```
+The assumption for multivariate normality was not met. Since at least one p-value <0.05, we did not test any further assumptions. If all would have been greater than 0.05 we would have subsequently tested homogeneity of covariance matrices.
+
+
+## Running MANOVA
+
+```{r}
+man<-manova(cbind(visits,income,health1,school,access)~ethnicity, data=medicaid)
+summary(man) #overall MANOVA is significant, follow up with one way
+summary.aov(man) #one-way ANOVA
+pairwise.t.test(medicaid$income,medicaid$ethnicity,p.adj="none") #pairwise
+pairwise.t.test(medicaid$school,medicaid$ethnicity,p.adj="none")
+```
+*I conducted a MANOVA test to determine whether any of the dependent variables (visits,income,health1,school,access) differed by ethnicity. Significant differences were found among the ethnicity for at least one dependent variable, approximate F=16.299, p=1.786e-15.*
+
+*Univariate ANOVAS for each DV were conducted as a follow. The univariate ANOVAs for income and school were both significant p=0.001348 & p=2.2e-16, respectively.*
+
+*I performed 8 tests in total (1 MANOVA, 5 ANOVA, 2 pairwise). Therefore I should use boneferroni level of .05/8 = .00625 to keep the type 1 error rate in check. The pairwise t test for income showed that the difference between the ethnicity groups caucasian and other was significant after the Bonefferoni correction (p=0.0013). Similarly, the pairwise t test for school showed that the difference between caucasian and other was also significant after the correction (p<2e-16). *
+
+
+## Randomization
+
+```{r}
+medicaid %>% group_by(gender) %>% summarize(mean=mean(health1)) %>%    summarize(meandiff=diff(mean)) #cutoff
+
+rand_dist1<-vector()
+
+for(i in 1:5000){
+new<-data.frame(health1=sample(medicaid$health1),gender=medicaid$gender)
+rand_dist1[i]<-mean(new[new$gender=="male",]$health1)-
+                 mean(new[new$gender=="female",]$health1)}
+
+{hist(rand_dist1,main="",ylab="");abline(v=c(-0.079276,0.079276),col="red")} 
+
+mean(rand_dist1>0.079276 | rand_dist1 < -0.079276) # get pvalue
+```
+*Ho: mean value of health 1 (1st PC of 3 health status variables) is the same for male vs.female respondents
+Ha: mean value of health 1 (1st PC of 3 health status variables) is different for male vs.female respondents
+Since p-value=.5308 is less than .05 we fail to reject Ho. .5308 is the probability of observing a mean difference as extreme as the one produced under the randomized distribution.*
+
+
+## Linear Regression
+
+```{r}
+medicaid$visits_c <- medicaid$visits - mean(medicaid$visits)
+medicaid$school_c <- medicaid$school - mean(medicaid$school)
+fit1 <- lm(health1~visits_c*school_c,data=medicaid)
+summary(fit1)
+```
+*Intercept: .001040 is the mean health1 value for individuals with average number of visits and average years of school.*
+*visits_c: for every 1 unit increase in visits predicted health1 would increase by .122973 for this group. *
+*school_c: FOr every 1 unit increase in # years of school, predicted health1 would decrease by .004768*
+*visits_c:school_c: The presence of school_c decreases the effect of visits_c on health1 by .007543 *
+
+####Interaction Plot
+```{r}
+install.packages("interactions",repos = "http://cran.us.r-project.org")
+library(interactions)
+interact_plot(fit1, pred = visits_c, modx = school_c, plot.points = TRUE) #interaction between visits_c and school_c
+```
+
+####Assumptions
+```{r}
+install.packages("lmtest",repos = "http://cran.us.r-project.org")
+install.packages("sandwich",repos = "http://cran.us.r-project.org")
+library(lmtest)
+library(sandwich)
+breaks <- seq(min(medicaid$visits), max(medicaid$visits), len=8)
+ggplot(medicaid, aes(visits, health1)) + geom_point(alpha=.3) + theme_bw()+ geom_vline(xintercept=breaks,lty=2,color='gray50')
+
+breaks2 <- seq(min(medicaid$school), max(medicaid$school), len=8)
+ggplot(medicaid, aes(school, health1)) + geom_point(alpha=.3) + theme_bw()+ geom_vline(xintercept=breaks2,lty=2,color='gray50')
+
+resids<-fit1$residuals
+fitvals<-fit1$fitted.values
+ggplot()+geom_point(aes(fitvals,resids))+geom_hline(yintercept=0, color='red')
+hist(resids)
+
+```
+*Linearity is likley violated since there aren't celar linear relationships between each x variable and health1. Homoskedacity may be violated since points appear to fan out across x axis. The distribution appears to be skewed right so normality may be violated.*
+
+
+####Robust SE
+```{r}
+#now adjust SEs to meet failed assumptions. corrected SEs now robust to homoskedacity violations
+coeftest(fit1, vcov = vcovHC(fit1)) #regression after adjusting standard errors for violation
+```
+*The only remaining significant predictor is visits_c (p=.000518). For every 1 unit increase in visits, predicted health1 would increase by .1229733 units. Unlike previously, when using robust SEs, the interaction between visits_c and school_c is no longer significant (p=.235184).*
+
+#### Proportion of variation in outcome explained by model
+```{r}
+summary(fit1)
+```
+*Since the adjusted R^2 value is .07395, .07395 of the variation in health1 can be explained by the model. Note, this adjusted value accounts for the penalty for each extra explanatory variable.*
+
+####Bootstrapping
+```{r}
+samp_distn<-replicate(5000, {
+boot_dat <- sample_frac(medicaid, replace=T) #bootstrap/row resample
+fit2 <- lm(health1~visits_c*school_c, data=boot_dat) #fit model on bootstrap sample
+coef(fit2) 
+})
+## Estimated SEs
+samp_distn %>% t %>% as.data.frame %>% summarize_all(sd)
+
+```
+*The bootstrap SE for the intercept is very similar to but slightly higher than the original and robust SEs. The bootstrap SE for visits_c is greater than the original SE but less than the robust SE> The bootstrap SE for school_c is just slightly smaller than the original SE and slightly smaller than the robust SE. The bootstrap SE for visits_c:school_c is greater than the original SE but less than the robist SE*
+
+
+##Logistic Regression
+*Creating a new binary variable y based off access (access to health services).Any value greater than .5 is turned into 1, which means high access and any value not >.5 is =0, meaning low access*
+```{r}
+medicaid <- medicaid%>%mutate(y=ifelse(access>=.5,1,0))
+head(medicaid)
+fit3<-glm(y~income+school+age,data=medicaid,family="binomial"(link="logit"))
+coeftest(fit3)
+exp(coef(fit3))
+```
+*Intercept: The odds of having high access to healthcare for income=0,school=0, age=0 is .285386*
+*Income: controlling for school and age, for every $1 additional increase in annual income, odds of high access to healthcare increase by a factor of 1.015907*
+*School: Controlling for income and age, for every 1 year increase in schooling, odds of high access to healthcare increase by a factor of 1.031197*
+*Age: Controlling for income and school, for every 1 year increase in age, odds of high access to healthcare increase by a factor of 1.007935 (significant)*
+
+####Confusion matrix
+```{r}
+prob<-predict(fit3,type="response") #predicted prob for every one
+pred<-ifelse(prob>.5,1,0)
+table(prediction=pred,truth=medicaid$y)%>%addmargins
+```
+```{r}
+(588+9)/996 #accuracy
+(9/398) #TPR/sensitivity
+(588/598) #TNR/Specificity
+(9/19) #PPR/precision
+
+```
+*.599 is the probability of correctly predicting low or high access. 0.023 is the probability of predicting high access if they really do have high access to healthcare. 0.983 is the probability of predicting low access for those who really do have low access. 0.474 is the proportion of those calssified as high access who actually are*
+
+
+#### Density plot
+```{r}
+medicaid$logit<-predict(fit3) #pred 
+
+medicaid %>% mutate(y=factor(y,levels=c("1","0"))) %>% 
+ggplot(aes(logit, fill=y))+geom_density(alpha=.3)+
+  geom_vline(xintercept=0,lty=2)
+```
+
+
+#### ROC plot/AUC
+```{r}
+install.packages("plotROC",repos = "http://cran.us.r-project.org")
+library(plotROC)
+ROCplot<-ggplot(medicaid)+geom_roc(aes(d=y,m=prob), n.cuts=0) 
+ROCplot
+calc_auc(ROCplot)
+```
+*AUC=.5599276. This model is a bad fit :(*
+
+
+##Logisitic Regression cont.
+```{r}
+fit4 <-glm(y~visits+exposure+children+age+income+health1+health2+married+gender+ethnicity+enroll+program,data=medicaid,family="binomial"(link="logit"))
+summary(fit4)
+medicaid$prob <- predict(fit4, type="response")
+class_diag(medicaid$prob,medicaid$y)
+```
+*.647 is the probability of correctly predicting low or high access. 0.465 is the probability of predicting high access if they really do have high access to healthcare. 0.768 is the probability of predicting low access for those who really do have low access. 0.571 is the proportion of those calssified as high access who actually are. AUC=.672, indicating the model is a poor fit*
+
+####10 fold CV
+```{r}
+k=10
+
+data <- medicaid %>% sample_frac #random
+folds <- ntile(1:nrow(data),n=10) # fold labels
+
+diags<-NULL
+for(i in 1:k){
+  train <- data[folds!=i,] #training set omitting i
+  test <- data[folds==i,] #test set of just i
+  truth <- test$y #truth labels from i
+  
+  fit5 <- glm(y~visits+exposure+children+age+income+health1+health2+married+gender+ethnicity+enroll+program, data=train, family="binomial")
+  probs <- predict(fit5, newdata=test, type="response")
+  
+  diags<-rbind(diags,class_diag(probs,truth))
+}
+
+summarize_all(diags,mean) # now compare new auc back to one for model in original dataset
+```
+*.634 is the probability of correctly predicting low or high access. 0.457 is the probability of predicting high access if they really do have high access to healthcare. 0.754 is the probability of predicting low access for those who really do have low access. 0.554 is the proportion of those calssified as high access who actually are. AUC=.651, indicating the model is a poor fit. The out of sample AUC is a bit lower than the in sample AUC, indicating that the model is doing slightly worse in CV and may be overfitting. Given, the model was poor to begin with*
+
+
+####Lasso regularization
+```{r}
+install.packages("glmnet",repos = "http://cran.us.r-project.org")
+library(glmnet)
+
+medicaid_resp<-as.matrix(medicaid$y) #response
+medicaid_preds<-model.matrix(y~visits+exposure+children+age+income+health1+health2+married+gender+ethnicity+enroll+program,data=medicaid)[,-1] #predictors
+
+
+cv <- cv.glmnet(medicaid_preds,medicaid_resp, family="binomial") #optimal lambda via 10-fold CV
+{plot(cv$glmnet.fit, "lambda", label=TRUE); abline(v = log(cv$lambda.1se)); abline(v = log(cv$lambda.min),lty=2)} #lambda plot
+
+lasso_fit2<-glmnet(medicaid_preds,medicaid_resp,family="binomial",lambda=cv$lambda.1se)
+
+coef(lasso_fit2)
+
+```
+*The coefficient for enrollyes is the only nonzero coeff and is the only one that is retained. This new LASSO model appears to be oversimplified*
+
+####LASSO 10 CV
+```{r}
+k=10
+
+
+medicaid_las <- medicaid_preds[,c('enrollyes','visits')]   #pulling visits too for variable to join by
+medicaid_las%>%as.data.frame()->medicaid_las
+medicaid_las%>%left_join(medicaid)->medicaid2
+head(medicaid2)
+data <- medicaid2 %>% sample_frac #random
+folds <- ntile(1:nrow(data),n=10) # fold labels
+
+diags<-NULL
+for(i in 1:k){
+  train <- data[folds!=i,] #training set omitting i
+  test <- data[folds==i,] #test set of just i
+  truth <- test$y #truth labels from i
+  
+  fit6 <- glm(y~enrollyes, data=train, family="binomial")
+  probs <- predict(fit6, newdata=test, type="response")
+  
+  diags<-rbind(diags,class_diag(probs,truth))
+}
+
+summarize_all(diags,mean)
+```
+*This new out of sample AUC is the worst out of all the models created. I mentioned it previosuly, but I think LASSO may have oversimplified the model to the point where it is unable to make accurate predictions due to inadequate number of predictor variables.*
