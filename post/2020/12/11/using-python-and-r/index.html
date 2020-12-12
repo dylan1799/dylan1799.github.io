@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="Dylan Pfannenstiel" />
+    
+    <link rel="shortcut icon" type="image/x-icon" href="../../../../../img/favicon.ico">
+    <title>Using Python and R</title>
+    <meta name="generator" content="Hugo 0.79.0" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="../../../../../css/main.css" />
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,400,200bold,400old" />
+    
+    <!--[if lt IE 9]>
+			<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+			<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
+
+    
+  </head>
+
+  <body>
+    <div id="wrap">
+      
+      <nav class="navbar navbar-default">
+  <div class="container">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="../../../../../"><i class="fa fa-home"></i></a>
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <div class="navbar-collapse collapse" id="navbar">
+      <ul class="nav navbar-nav navbar-right">
+      
+        
+        <li><a href="../../../../../post/">BLOG</a></li>
+        
+        <li><a href="../../../../../projects/">PROJECTS</a></li>
+        
+        <li><a href="../../../../../resume/">RESUME</a></li>
+        
+      
+      </ul>
+    </div>
+  </div>
+</nav>
+
+      <div class="container">
+        <div class="blog-post">
+          <h3>
+            <strong><a href="../../../../../post/2020/12/11/using-python-and-r/">Using Python and R</a></strong>
+          </h3>
+        </div>
+ 
+<div class="blog-title">
+          <h4>
+         December 11, 2020 
+            &nbsp;&nbsp;
+            
+          </h4>
+        </div>
+
+        <div class="panel panel-default">
+          <div class="panel-body">
+            <div class="blogpost">
+              
+
+
+<div id="using-r-with-python" class="section level1">
+<h1>Using R with Python</h1>
+<div id="i-will-be-exploring-how-python-and-r-can-talk-to-each-other-accomplish-a-variety-of-tasks." class="section level4">
+<h4>I will be exploring how python and R can &quot;talk&quot; to each other accomplish a variety of tasks.</h4>
+<p>The reticulate package enables R and python to pass information between one another and communicate.</p>
+<pre class="r"><code>library(reticulate)
+
+air&lt;-airquality #defined dataset in R</code></pre>
+<p>Now we can use the dataset from R in python!</p>
+<pre class="python"><code>r.air.head() #accessed this dataset we created in R in python</code></pre>
+<pre><code>##         Ozone     Solar.R  Wind  Temp  Month  Day
+## 0          41         190   7.4    67      5    1
+## 1          36         118   8.0    72      5    2
+## 2          12         149  12.6    74      5    3
+## 3          18         313  11.5    62      5    4
+## 4 -2147483648 -2147483648  14.3    56      5    5</code></pre>
+<p>Assigning a string to a variable in python</p>
+<pre class="python"><code>python_var=&quot;string created in python&quot;
+print(python_var)</code></pre>
+<pre><code>## string created in python</code></pre>
+<p>Now accessing that in R (note the use of py$ before specifying the variable)</p>
+<pre class="r"><code>py$python_var</code></pre>
+<pre><code>## [1] &quot;string created in python&quot;</code></pre>
+</div>
+<div id="my-applicationidea" class="section level2">
+<h2>My Application/Idea</h2>
+<div id="i-had-the-idea-to-use-python-and-r-to-analyze-and-plot-data-from-fluorescence-microscopy-images-of-bacterial-cells.-this-cells-in-the-images-would-be-stained-with-gfp-green-fluorescence-protein-and-appear-similar-to-the-following-image" class="section level5">
+<h5>I had the idea to use python and R to analyze and plot data from fluorescence microscopy images of bacterial cells. This cells in the images would be stained with GFP (green fluorescence protein) and appear similar to the following image:</h5>
+<div class="figure">
+<img src="../../../../../post/gfp.jpg" style="width:70.0%" />
+
+</div>
+</div>
+<div id="i-hope-to-accomplish-two-things-use-python-to-count-the-number-of-cells-in-each-frame.-im-not-sure-exactly-what-approach-i-will-take-but-i-speculate-that-i-will-have-to-implement-a-machine-learning-algorithm-which-will-differentiate-between-cell-and-background-on-the-basis-of-pixel-colorintensity.-in-addition-the-algorithm-must-be-able-to-quantify-the-intensity-of-each-cell.-i-think-that-i-might-accomplish-this-by-incorporating-a-relative-gfp-fluorescence-scale-ex1-arbitrary-unit-500-arbitrary-units-from-which-python-can-classify-each-cell.-again-this-approach-is-in-its-infancy-but-im-really-excited-to-give-it-a-shot.-finally-i-plan-to-push-the-raw-intensity-data-from-python-into-r-ggplot2-to-plot-it-in-the-form-of-a-histogram-with-10-bins." class="section level5">
+<h5>I hope to accomplish two things: use python to count the number of cells in each frame. I'm not sure exactly what approach I will take, but I speculate that I will have to implement a machine learning algorithm which will differentiate between cell and background on the basis of pixel color/intensity. In addition, the algorithm must be able to quantify the intensity of each cell. I think that I might accomplish this by incorporating a relative GFP fluorescence scale (ex:1 arbitrary unit-500 arbitrary units) from which python can classify each cell. Again, this approach is in its infancy, but I'm really excited to give it a shot. Finally, I plan to push the raw intensity data from python into R (ggplot2) to plot it in the form of a histogram with ~10 bins.</h5>
+</div>
+<div id="in-the-following-code-i-take-a-much-more-basic-approach-as-i-import-a-dataset-into-python-and-then-push-it-to-r-to-plot." class="section level5">
+<h5>In the following code, I take a much more basic approach as I import a dataset into python and then push it to R to plot.</h5>
+<pre class="python"><code>
+import pandas as pd
+quakesdf=pd.read_csv(&quot;https://vincentarelbundock.github.io/Rdatasets/csv/datasets/quakes.csv&quot;,index_col=0)
+
+quakesdf.head()</code></pre>
+<pre><code>##      lat    long  depth  mag  stations
+## 1 -20.42  181.62    562  4.8        41
+## 2 -20.62  181.03    650  4.2        15
+## 3 -26.00  184.10     42  5.4        43
+## 4 -17.97  181.66    626  4.1        19
+## 5 -20.42  181.96    649  4.0        11</code></pre>
+<p>Note: in my real life application, I plan to create a histogram</p>
+<pre class="r"><code>library(ggplot2)
+
+ggplot()+geom_point(aes(py$quakesdf$depth,py$quakesdf$mag))</code></pre>
+<p><img src="../../../../../post/2020-12-11-using-python-and-r_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+</div>
+</div>
+</div>
+
+            
+        <hr>         <div class="related-posts">
+                <h5>Related Posts</h5>
+                
+              </div> 
+            </div>
+          </div>
+
+   <hr>  <div class="disqus">
+  <div id="disqus_thread"></div>
+  <script type="text/javascript">
+
+    (function() {
+      
+      
+      if (window.location.hostname == "localhost")
+        return;
+
+      var disqus_shortname = '';
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  <a href="http://disqus.com/" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div> 
+        </div>
+      </div>
+    </div>
+
+    
+    <footer>
+  <div id="footer">
+    <div class="container">
+      <p class="text-muted">&copy; All rights reserved. Powered by <a href="https://gohugo.io/">Hugo</a> and
+      <a href="http://www.github.com/nurlansu/hugo-sustain/">sustain</a> with ♥</p>
+    </div>
+  </div>
+</footer>
+<div class="footer"></div>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="../../../../../js/docs.min.js"></script>
+<script src="../../../../../js/main.js"></script>
+
+<script src="../../../../../js/ie10-viewport-bug-workaround.js"></script>
+
+
+    
+  </body>
+</html>

@@ -1,0 +1,63 @@
+---
+title: Using Python and R
+author: DMP
+date: '2020-12-11'
+slug: using-python-and-r
+categories: []
+tags: []
+description: ''
+---
+#Using R with Python
+####I will be exploring how python and R can "talk" to each other accomplish a variety of tasks.
+
+The reticulate package enables R and python to pass information between one another and communicate.
+```{r}
+library(reticulate)
+
+air<-airquality #defined dataset in R
+
+```
+
+Now we can use the dataset from R in python!
+```{python}
+r.air.head() #accessed this dataset we created in R in python
+```
+
+Assigning a string to a variable in python
+```{python}
+python_var="string created in python"
+print(python_var)
+```
+
+Now accessing that in R (note the use of py$ before specifying the variable)
+```{r}
+py$python_var
+```
+
+
+##My Application/Idea
+
+##### I had the idea to use python and R to analyze and plot data from fluorescence microscopy images of bacterial cells. This cells in the images would be stained with GFP (green fluorescence protein) and appear similar to the following image:
+![](/post/gfp.jpg){width=70%}
+
+##### I hope to accomplish two things: use python to count the number of cells in each frame. I'm not sure exactly what approach I will take, but I speculate that I will have to implement a machine learning algorithm which will differentiate between cell and background on the basis of pixel color/intensity. In addition, the algorithm must be able to quantify the intensity of each cell. I think that I might accomplish this by incorporating a relative GFP fluorescence scale (ex:1 arbitrary unit-500 arbitrary units) from which python can classify each cell. Again, this approach is in its infancy, but I'm really excited to give it a shot. Finally, I plan to push the raw intensity data from python into R (ggplot2) to plot it in the form of a histogram with ~10 bins. 
+
+##### In the following code, I take a much more basic approach as I import a dataset into python and then push it to R to plot.
+```{python}
+
+import pandas as pd
+quakesdf=pd.read_csv("https://vincentarelbundock.github.io/Rdatasets/csv/datasets/quakes.csv",index_col=0)
+
+quakesdf.head()
+
+```
+
+
+Note: in my real life application, I plan to create a histogram
+```{r}
+library(ggplot2)
+
+ggplot()+geom_point(aes(py$quakesdf$depth,py$quakesdf$mag))
+
+```
+

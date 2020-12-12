@@ -6,7 +6,18 @@
     <description>Recent content in Posts on Dylan Pfannenstiel&#39;s Site</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-US</language>
-    <lastBuildDate>Thu, 10 Dec 2020 00:00:00 +0000</lastBuildDate><atom:link href="/post/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 11 Dec 2020 00:00:00 +0000</lastBuildDate><atom:link href="/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Using Python and R</title>
+      <link>/post/2020/12/11/using-python-and-r/</link>
+      <pubDate>Fri, 11 Dec 2020 00:00:00 +0000</pubDate>
+      
+      <guid>/post/2020/12/11/using-python-and-r/</guid>
+      <description>Using R with Python I will be exploring how python and R can &amp;quot;talk&amp;quot; to each other accomplish a variety of tasks. The reticulate package enables R and python to pass information between one another and communicate.
+library(reticulate) air&amp;lt;-airquality #defined dataset in R Now we can use the dataset from R in python!
+r.air.head() #accessed this dataset we created in R in python ## Ozone Solar.R Wind Temp Month Day ## 0 41 190 7.</description>
+    </item>
+    
     <item>
       <title>Test Post 1</title>
       <link>/post/2020/12/10/test-post-1/</link>
